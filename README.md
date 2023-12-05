@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔎 CSVW ontomap 🗺️
+# 🔎 CSVW OntoMap 🗺️
 
 [![PyPI - Version](https://img.shields.io/pypi/v/csvw-ontomap.svg?logo=pypi&label=PyPI&logoColor=silver)](https://pypi.org/project/csvw-ontomap/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/csvw-ontomap.svg?logo=python&label=Python&logoColor=silver)](https://pypi.org/project/csvw-ontomap/)
@@ -9,7 +9,7 @@
 [![Test package](https://github.com/vemonet/csvw-ontomap/actions/workflows/test.yml/badge.svg)](https://github.com/vemonet/csvw-ontomap/actions/workflows/test.yml)
 [![Publish package](https://github.com/vemonet/csvw-ontomap/actions/workflows/publish.yml/badge.svg)](https://github.com/vemonet/csvw-ontomap/actions/workflows/publish.yml)
 
-[![Hatch project](https://img.shields.io/badge/%F0%9F%A5%9A-Hatch-4051b5.svg){ loading=lazy .off-glb }](https://github.com/pypa/hatch) [![linting - Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json){ loading=lazy .off-glb }](https://github.com/astral-sh/ruff) [![code style - Black](https://img.shields.io/badge/code%20style-black-000000.svg){ loading=lazy .off-glb }](https://github.com/psf/black) [![types - Mypy](https://img.shields.io/badge/types-Mypy-blue.svg){ loading=lazy .off-glb }](https://github.com/python/mypy)
+[![Hatch project](https://img.shields.io/badge/%F0%9F%A5%9A-Hatch-4051b5.svg)](https://github.com/pypa/hatch) [![linting - Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![code style - Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![types - Mypy](https://img.shields.io/badge/types-Mypy-blue.svg)](https://github.com/python/mypy)
 
 </div>
 

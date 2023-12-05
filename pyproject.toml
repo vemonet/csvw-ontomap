@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 requires-python = ">=3.8"
 name = "csvw-ontomap"
-description = "Generate CSVW (CSV on the Web) metadata for CSV file. Automatically extract columns datatypes, if they are categorical, which values are accepted."
+description = "Generate CSVW (CSV on the Web) metadata for CSV files. Automatically extract columns datatypes, if they are categorical, which values are accepted, and map columns to ontology terms."
 readme = "README.md"
 license = { file = "LICENSE.txt" }
 authors = [
