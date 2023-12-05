@@ -28,7 +28,6 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
 ]
 dynamic = ["version"]
 
@@ -97,7 +96,7 @@ compile = "pip-compile -o requirements.txt pyproject.toml"
 
 
 [[tool.hatch.envs.all.matrix]]
-python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+python = ["3.8", "3.9", "3.10", "3.11"]
 
 
 ## TOOLS

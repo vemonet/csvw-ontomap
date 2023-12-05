@@ -15,8 +15,8 @@
 
 Automatically generate descriptive [CSVW](https://csvw.org) (CSV on the Web) metadata for tabular data files:
 
-- **Extract columns datatypes**: detect if they are categorical, and which values are accepted.
-- **Ontology mappings**: when provided with a URL to an OWL ontology, text embeddings are generated and stored in a local Qdrant vector database for all classes and properties, we use similarity search to match each data column to the most relevant ontology terms.
+- **Extract columns datatypes**: detect if they are categorical, and which values are accepted, using [`ydata-profiling`](https://github.com/ydataai/ydata-profiling).
+- **Ontology mappings**: when provided with a URL to an OWL ontology, text embeddings are generated and stored in a local [Qdrant](https://github.com/qdrant/qdrant) vector database for all classes and properties, we use similarity search to match each data column to the most relevant ontology terms.
 - Currently supports: CSV, Excel, SPSS files. Any format that can be loaded in a Pandas DataFrame could be easily added, create an issue on GitHub to request a new format to be added.
 
 > [!WARNING]
