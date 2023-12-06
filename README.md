@@ -18,10 +18,11 @@ Automatically generate descriptive [CSVW](https://csvw.org) (CSV on the Web) met
 - **Extract columns datatypes**: detect if they are categorical, and which values are accepted, using [`ydata-profiling`](https://github.com/ydataai/ydata-profiling).
 - **Ontology mappings**: when provided with a URL to an OWL ontology, text embeddings are generated and stored in a local [Qdrant](https://github.com/qdrant/qdrant) vector database for all classes and properties, we use similarity search to match each data column to the most relevant ontology terms.
 - Currently supports: CSV, Excel, SPSS files. Any format that can be loaded in a Pandas DataFrame could be easily added, create an issue on GitHub to request a new format to be added.
+    - Processed files needs to contain 1 sheet, if multiple sheets are present in a file only the first one will be processed.
 
 > [!WARNING]
 >
-> Processed files needs to contain 1 sheet, if multiple sheets are present in a file only the first one will be processed.
+> The lib does not check yet if the VectorDB has been fully loaded. It will skip loading if there is at least 2 vectors in the DB. So if you stop the loading process halfway through, you will need to delete the VectorDB folder to make sure the lib run the ontology loading.
 
 ## 📦️ Installation
 

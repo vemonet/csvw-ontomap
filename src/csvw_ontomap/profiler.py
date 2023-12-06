@@ -15,17 +15,18 @@ from csvw_ontomap.utils import BOLD, END, YELLOW, OntomapConfig
 class CsvwProfiler:
     def __init__(
         self,
-        ontology_url: Optional[str] = None,
+        ontologies: Optional[List[str]] = None,
         vectordb_path: str = "data/vectordb",
         config: Optional[OntomapConfig] = None,
+        recreate: bool = False,
     ) -> None:
         """Optionally provide an ontology that will be loaded to a vectordb for mapping"""
         self.config = config if config else OntomapConfig()
         self.csvw: Any = CSVW_BASE
-        self.ontology_url = ontology_url
+        self.ontologies = ontologies
         self.vectordb_path = vectordb_path
-        if self.ontology_url:
-            load_vectordb(self.ontology_url, self.vectordb_path)
+        if self.ontologies:
+            load_vectordb(self.ontologies, self.vectordb_path, recreate)
 
     def profile_files(self, files: List[str], config: Optional[OntomapConfig] = None) -> Any:
         """Profile a list of tabular files by generating report using https://github.com/ydataai/ydata-profiling
@@ -61,7 +62,7 @@ class CsvwProfiler:
                 for var_name, var_report in report["variables"].items():
                     col = {"titles": var_name, "dc:title": separate_words(var_name)}
 
-                    if self.ontology_url:
+                    if self.ontologies:
                         # Get most matching property or class from the ontology
                         matches = search_vectordb(self.vectordb_path, col["dc:title"], config.comment_best_matches)
                         if matches[0].score >= config.search_threshold:
@@ -170,6 +171,6 @@ def separate_words(input_string: str) -> str:
 CSVW_BASE = {
     "@context": ["http://www.w3.org/ns/csvw", {"@language": "en"}],
     # "dc:title": "CSVW profiling report",
-    "dialect": {"header": True, "encoding": "utf-8"},
+    # "dialect": {"header": True, "encoding": "utf-8"},
     "tables": [],
 }

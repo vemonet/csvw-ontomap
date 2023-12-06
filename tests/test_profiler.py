@@ -5,8 +5,11 @@ from csvw import CSVW
 
 from csvw_ontomap import CsvwProfiler, OntomapConfig, __version__
 
-ONTOLOGY_URL = "https://semanticscience.org/ontology/sio.owl"
-# ONTOLOGY_URL= "http://www.lesfleursdunormal.fr/static/_downloads/omop_cdm_v6.owl"
+ONTOLOGIES = [
+    # "https://semanticscience.org/ontology/sio.owl",
+    # "http://www.lesfleursdunormal.fr/static/_downloads/omop_cdm_v6.owl",
+    "data/LOINC.ttl",
+]
 
 
 def test_profiler():
@@ -18,14 +21,14 @@ def test_profiler():
 
 def test_profiler_with_ontology():
     """Test the Profiler with ontology"""
-    profiler = CsvwProfiler(ONTOLOGY_URL)
+    profiler = CsvwProfiler(ONTOLOGIES)
     csvw_report = profiler.profile_files(["tests/resources/heart.csv"])
     validate_csvw(csvw_report)
 
 
 def test_profiler_with_ontology_best_matches():
     """Test the Profiler with ontology and add best matches"""
-    profiler = CsvwProfiler(ONTOLOGY_URL, config=OntomapConfig(comment_best_matches=3))
+    profiler = CsvwProfiler(ONTOLOGIES, config=OntomapConfig(comment_best_matches=3))
     csvw_report = profiler.profile_files(["tests/resources/heart.csv"])
     validate_csvw(csvw_report)
 

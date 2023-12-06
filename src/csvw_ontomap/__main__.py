@@ -12,7 +12,7 @@ cli = typer.Typer()
 @cli.command("profile")
 def cli_profile(
     files: List[str] = typer.Argument(None, help="Files to profile"),
-    ontology: str = typer.Option(None, "-m", help="URL to the OWL ontology to map the CSV columns to"),
+    ontologies: List[str] = typer.Option(None, "-m", help="URLs to the OWL ontologies to map the CSV columns to"),
     vectordb: str = typer.Option("data/vectordb", "-d", help="Path to the VectorDB"),
     best_matches: int = typer.Option(0, help="Number of best matches to add to each column as rdfs:comment"),
     threshold: float = typer.Option(
@@ -25,7 +25,7 @@ def cli_profile(
         comment_best_matches=best_matches,
         search_threshold=threshold,
     )
-    profiler = CsvwProfiler(ontology, vectordb, config)
+    profiler = CsvwProfiler(ontologies, vectordb, config)
     report = profiler.profile_files(files)
     if output:
         if verbose:
