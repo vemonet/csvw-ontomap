@@ -6,9 +6,9 @@ from csvw import CSVW
 from csvw_ontomap import CsvwProfiler, OntomapConfig, __version__
 
 ONTOLOGIES = [
-    # "https://semanticscience.org/ontology/sio.owl",
-    # "http://www.lesfleursdunormal.fr/static/_downloads/omop_cdm_v6.owl",
-    "data/LOINC.ttl",
+    "https://vemonet.github.io/omop-cdm-owl/ontology.owl",
+    "https://semanticscience.org/ontology/sio.owl",
+    # "data/LOINC.ttl",
 ]
 
 
