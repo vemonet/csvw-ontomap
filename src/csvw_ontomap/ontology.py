@@ -1,8 +1,7 @@
 """Load and search an ontology with a vectordb."""
-from typing import Any, List
+from typing import Any, Iterable, List
 
 from fastembed.embedding import FlagEmbedding as Embedding
-from owlready2 import get_ontology
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
     Distance,
@@ -12,6 +11,7 @@ from qdrant_client.http.models import (
     PointStruct,
     VectorParams,
 )
+from rdflib import Graph
 
 from csvw_ontomap.utils import BOLD, CYAN, END
 
@@ -28,7 +28,7 @@ def load_vectordb(ontologies: List[str], vectordb_path: str, recreate: bool = Fa
     vectordb = QdrantClient(path=vectordb_path)
 
     try:
-        print(f"Vectors in DB: {vectordb.get_collection(COLLECTION_NAME).points_count}")
+        print(f"Total vectors in DB: {vectordb.get_collection(COLLECTION_NAME).points_count}")
     except:
         recreate = True
 
@@ -42,77 +42,125 @@ def load_vectordb(ontologies: List[str], vectordb_path: str, recreate: bool = Fa
     for ontology_url in ontologies:
         print(f"\n📚 Loading ontology from {BOLD}{CYAN}{ontology_url}{END}")
 
-        onto = get_ontology(ontology_url).load()
+        # NOTE: We use oxrdflib to handle large ontologies (600M+)
+        g = Graph(store="Oxigraph")
+        try:
+            g.parse(ontology_url)
+        except Exception as e:
+            print(f"Default parsing failed, trying with XML parser: {e}")
+            g.parse(ontology_url, format="xml")
+
         # For each ontology check if there are more vectors than classes/properties, and skip building if enough vectors for this ontology
-        all_onto_count = len(list(onto.classes())) + len(list(onto.properties()))
-        onto_vector_count = get_vectors_count(vectordb, ontology_url)
+        onto_vector_count = get_onto_vectors_count(vectordb, ontology_url)
+        q_count_cls = """PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+        PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+        SELECT (COUNT(DISTINCT ?uri) as ?clsCount)
+        WHERE {
+            ?uri a ?type .
+            FILTER (
+                ?type = owl:Class ||
+                ?type = owl:DatatypeProperty ||
+                ?type = owl:ObjectProperty
+            )
+        }
+        """
+        all_onto_count = 0
+        results: Iterable[Any] = g.query(q_count_cls)
+        for res in results:
+            all_onto_count = int(res.clsCount)
+            break
         print(
-            f"{all_onto_count} classes/properties in the ontology | {BOLD}{onto_vector_count}{END} loaded in the VectorDB"
+            f"{BOLD}{all_onto_count}{END} classes/properties in the ontology | {BOLD}{onto_vector_count}{END} loaded in the VectorDB"
         )
         if onto_vector_count > all_onto_count:
             print("⏩ Skip loading")
             continue
 
-        # Find labels, generate embeddings, and upload them using owlready2
-        upload_concepts(onto.classes(), "class", ontology_url, vectordb, embedding_model)
-        upload_concepts(onto.properties(), "property", ontology_url, vectordb, embedding_model)
+        # Get classes labels
+        q_cls_labels = """PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+        PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+        PREFIX dc: <http://purl.org/dc/elements/1.1/>
+        PREFIX dcterms: <http://purl.org/dc/terms/>
 
-        # NOTE: Try to use oxrdflib to handle large ontologies (600M+)
-        # g = Graph(store="Oxigraph")
-        # g.parse(ontology_url)
-        # q = """
-        # PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-        # PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
-        # PREFIX owl:  <http://www.w3.org/2002/07/owl#>
-        # PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+        SELECT ?uri ?pred ?label ?type
+        WHERE {
+            ?uri a ?type ;
+                ?pred ?label .
+            FILTER (
+                ?type = owl:Class
+            )
+            FILTER (
+                ?pred = rdfs:label ||
+                ?pred = skos:prefLabel ||
+                ?pred = skos:altLabel ||
+                ?pred = skos:definition ||
+                ?pred = rdfs:comment ||
+                ?pred = dcterms:description ||
+                ?pred = dc:title
+            )
+        }
+        """
+        embed_labels(g.query(q_cls_labels), "classes", ontology_url, vectordb, embedding_model)
 
-        # SELECT *
-        # WHERE {
-        #     ?class a owl:Class ;
-        #         rdfs:label/skos:prefLabel ?label .
-        # }
-        # """
-        # for r in g.query(q):
-        #     print(r)
+        # Get properties labels (separated to classes to reduce the size of the queries for big ontologies)
+        q_prop_labels = """PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+        PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX owl:  <http://www.w3.org/2002/07/owl#>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+        PREFIX dc: <http://purl.org/dc/elements/1.1/>
+        PREFIX dcterms: <http://purl.org/dc/terms/>
+
+        SELECT ?uri ?pred ?label ?type
+        WHERE {
+            ?uri a ?type ;
+                ?pred ?label .
+            FILTER (
+                ?type = owl:DatatypeProperty ||
+                ?type = owl:ObjectProperty
+            )
+            FILTER (
+                ?pred = rdfs:label ||
+                ?pred = skos:prefLabel ||
+                ?pred = skos:altLabel ||
+                ?pred = skos:definition ||
+                ?pred = rdfs:comment ||
+                ?pred = dcterms:description ||
+                ?pred = dc:title
+            )
+        }
+        """
+        embed_labels(g.query(q_prop_labels), "properties", ontology_url, vectordb, embedding_model)
 
 
-def get_vectors_count(vectordb: Any, ontology: str) -> int:
+def get_onto_vectors_count(vectordb: Any, ontology: str) -> int:
+    """Get vector count for a specific ontology URL"""
     search_result = vectordb.scroll(
         collection_name=COLLECTION_NAME,
         scroll_filter=Filter(should=[FieldCondition(key="ontology", match=MatchText(text=ontology))]),
-        # with_vectors=True,
-        # with_payload=True,
-        limit=999999,
+        limit=99999999,
     )
     return len(list(search_result[0]))
 
 
-def upload_concepts(onto_concepts: Any, category: str, ontology_url: str, vectordb: Any, embedding_model: Any) -> None:
-    """Generate and upload embeddings for label and description of a list of owlready2 classes/properties"""
-    # concepts_count = len(list(onto_concepts))
-    concepts_count = 0
+def embed_labels(concepts_labels: Any, category: str, ontology_url: str, vectordb: Any, embedding_model: Any) -> None:
+    """Generate and upload embeddings for labels extracted from an ontology"""
     concept_labels = []
     concept_uris = []
-    for concept in onto_concepts:
-        # print(f"Class URI: {ent.iri}, Label: {ent.label}, Description: {str(ent.description.first())}, Comment: {ent.comment}")
-        # print(concept.label, concept.comment, concept.name)
-        if concept.label:
-            concept_uris.append(concept.iri)
-            concept_labels.append(str(concept.label.first()))
-        try:
-            if concept.description:
-                concept_uris.append(concept.iri)
-                concept_labels.append(str(concept.description[0]))
-        except:
-            pass
-        # try:
-        if concept.comment:
-            # print("COMMENT", concept.comment[0])
-            concept_uris.append(concept.iri)
-            concept_labels.append(str(concept.comment[0]))
-        # except:
-        #     pass
-        concepts_count += 1
+    concept_payloads = []
+    # Prepare list of labels to be embedded
+    for cl in concepts_labels:
+        concept_labels.append(str(cl.label))
+        concept_uris.append(str(cl.uri))
+        concept_payloads.append(
+            {
+                "pred": str(cl.pred),
+                "type": str(cl.type),
+            }
+        )
+    concepts_count = len(set(concept_uris))
     print(f"⏳ Generating {len(concept_uris)} embeddings for {concepts_count} {category}")
 
     # Generate embeddings, and upload them
@@ -122,9 +170,17 @@ def upload_concepts(onto_concepts: Any, category: str, ontology_url: str, vector
         PointStruct(
             id=points_count + i,
             vector=embedding,
-            payload={"id": uri, "label": label, "category": category, "ontology": ontology_url},
+            payload={
+                "id": uri,
+                "label": label,
+                "type": payload["type"],
+                "ontology": ontology_url,
+                "predicate": payload["pred"],
+            },
         )
-        for i, (uri, label, embedding) in enumerate(zip(concept_uris, concept_labels, embeddings))
+        for i, (uri, label, payload, embedding) in enumerate(
+            zip(concept_uris, concept_labels, concept_payloads, embeddings)
+        )
     ]
     # print(f"{BOLD}{len(class_points)}{END} vectors generated for {concepts_count} {category}")
     vectordb.upsert(collection_name=COLLECTION_NAME, points=class_points)
