@@ -73,7 +73,7 @@ class CsvwProfiler:
                         if config.comment_best_matches > 0:
                             col["rdfs:comment"] = "Best matches: " + " - ".join(
                                 [
-                                    f"[{round(m.score, 2)}] {m.payload['label']} ({m.payload['category']}) <{m.payload['id']}>"
+                                    f"[{round(m.score, 2)}] {m.payload['label']} ({m.payload['type']}) <{m.payload['id']}>"
                                     for m in matches
                                 ]
                             )
