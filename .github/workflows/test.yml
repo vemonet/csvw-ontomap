@@ -11,6 +11,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "windows-latest", "macos-latest"]
         python-version: ["3.8", "3.9", "3.10", "3.11"]
+        # ydata-profiling don't support "3.12" yet
 
     steps:
     - uses: actions/checkout@v4
